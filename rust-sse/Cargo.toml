@@ -1,0 +1,11 @@
+[package]
+name = "rust-sse"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Learning project: SSE (text/event-stream) parser + (later) streaming HTTP client"
+
+[dependencies]
+
+[dev-dependencies]
+
