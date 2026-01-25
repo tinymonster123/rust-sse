@@ -1,22 +1,4 @@
-/// 一条 SSE 事件（由若干行 field/value 组成，空行结束一条 message）
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SseEvent {
-    pub id: Option<String>,
-    pub event: Option<String>,
-    pub data: String,
-    pub retry: Option<u64>,
-}
-
-impl Default for SseEvent {
-    fn default() -> Self {
-        Self {
-            id: None,
-            event: None,
-            data: String::new(),
-            retry: None,
-        }
-    }
-}
+use crate::event::SseEvent;
 
 /// SSE 增量解析器：输入任意切分的 bytes chunk，按 SSE 规则产出 0..N 个事件。
 ///
@@ -83,8 +65,9 @@ impl SseParser {
                 break;
             };
 
-            let line = &self.buffer[line_start..end];
-            self.on_line(line, &mut out);
+            // 复制行数据以避免借用冲突
+            let line = self.buffer[line_start..end].to_vec();
+            self.on_line(&line, &mut out);
 
             line_start = self.position; // 下一行从当前位置开始
         }
@@ -101,8 +84,8 @@ impl SseParser {
     fn on_line(&mut self, line: &[u8], out: &mut Vec<SseEvent>) {
         if line.is_empty() {
             // 空行：结束一条 message，产出事件并重置
+            // `mem::take` 会把 self.cur 替换成 Default，并返回旧值
             out.push(std::mem::take(&mut self.cur));
-            self.cur = SseEvent::default();
             return;
         }
 
@@ -119,22 +102,28 @@ impl SseParser {
                 break;
             }
         }
-        let Some(field_len) = colon_idx else {
-            // 没有 ':'：无效行，忽略
-            return;
+        // 按 SSE 规范：如果没有冒号，整行是字段名，值为空字符串
+        let (field, value): (&[u8], &[u8]) = if let Some(colon_pos) = colon_idx {
+            if colon_pos == 0 {
+                // ':' 开头已经在 comment 分支处理；这里兜底忽略
+                return;
+            }
+            let field = &line[..colon_pos];
+            // value 可能是 ":<value>" 或 ": <value>"
+            let mut value_start = colon_pos + 1;
+            if value_start < line.len() && line[value_start] == b' ' {
+                value_start += 1;
+            }
+            let value = if value_start <= line.len() {
+                &line[value_start..]
+            } else {
+                &[]
+            };
+            (field, value)
+        } else {
+            // 没有冒号：整行是字段名，值为空
+            (line, &[] as &[u8])
         };
-        if field_len == 0 {
-            // ':' 开头已经在 comment 分支处理；这里兜底忽略
-            return;
-        }
-
-        let field = &line[..field_len];
-        // value 可能是 ":<value>" 或 ": <value>"
-        let mut value_start = field_len + 1;
-        if value_start < line.len() && line[value_start] == b' ' {
-            value_start += 1;
-        }
-        let value = if value_start <= line.len() { &line[value_start..] } else { &[] };
 
         match field {
             b"data" => {

@@ -3,9 +3,43 @@ name = "rust-sse"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "Learning project: SSE (text/event-stream) parser + (later) streaming HTTP client"
+description = "SSE parser, client, and protocol bridge supporting SSE/WebSocket/gRPC"
+
+[features]
+default = ["client"]
+client = ["dep:reqwest"]
+bridge = []
+ws = ["dep:tokio-tungstenite", "dep:futures-sink", "bridge"]
+grpc = ["dep:tonic", "dep:prost", "bridge"]
+server-axum = ["dep:axum", "dep:tokio-stream", "bridge"]
+full = ["client", "bridge", "ws", "grpc", "server-axum"]
 
 [dependencies]
+async-stream = "0.3"
+bytes = "1"
+futures-core = "0.3"
+futures-util = "0.3"
+thiserror = "1"
+tokio = { version = "1", features = ["time", "macros", "rt", "sync"] }
+pin-project-lite = "0.2"
+tracing = "0.1"
+
+# Optional: client feature
+reqwest = { version = "0.12", default-features = true, features = ["stream"], optional = true }
+
+# Optional: ws feature
+tokio-tungstenite = { version = "0.24", optional = true }
+futures-sink = { version = "0.3", optional = true }
+
+# Optional: grpc feature
+tonic = { version = "0.12", optional = true }
+prost = { version = "0.13", optional = true }
+
+# Optional: server-axum feature
+axum = { version = "0.7", features = ["json"], optional = true }
+tokio-stream = { version = "0.1", optional = true }
 
 [dev-dependencies]
-
+tokio = { version = "1", features = ["full"] }
+tokio-test = "0.4"
+serde = { version = "1", features = ["derive"] }
