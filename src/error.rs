@@ -17,6 +17,12 @@ pub enum SseError {
 
     #[error("URL 解析错误: {0}")]
     Url(String),
+
+    #[error("连接超时")]
+    Timeout,
+
+    #[error("达到最大重试次数: {0}")]
+    MaxRetriesExceeded(usize),
 }
 
 /// 事件源的错误
@@ -27,6 +33,9 @@ pub enum SourceError {
 
     #[error("连接错误: {0}")]
     Connection(String),
+
+    #[error("连接超时")]
+    Timeout,
 
     #[error("解析错误: {0}")]
     Parse(String),

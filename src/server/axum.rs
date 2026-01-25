@@ -10,10 +10,10 @@ use bytes::Bytes;
 use futures_core::Stream;
 use futures_util::StreamExt;
 use std::convert::Infallible;
-use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
+use tracing::warn;
 
 /// Axum 的 SSE 响应包装器
 ///
@@ -60,7 +60,9 @@ impl SseResponse {
                     Ok(event) => {
                         yield SseSink::format_event(&event);
                     }
-                    Err(_) => {} // 跳过错误
+                    Err(e) => {
+                        warn!(error = %e, "Error from event source, skipping event");
+                    }
                 }
             }
         };

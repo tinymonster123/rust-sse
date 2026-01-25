@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use tokio_tungstenite::tungstenite::Message;
+use tracing::warn;
 
 /// WebSocket 消息格式
 #[derive(Debug, Clone, Copy, Default)]
@@ -139,7 +140,9 @@ impl EventSink for WebSocketSink {
         Box::pin(async move {
             self.closed.store(true, Ordering::SeqCst);
             // 发送关闭帧
-            let _ = self.tx.send(Message::Close(None)).await;
+            if let Err(e) = self.tx.send(Message::Close(None)).await {
+                warn!(error = %e, "Failed to send WebSocket close frame");
+            }
             Ok(())
         })
     }
