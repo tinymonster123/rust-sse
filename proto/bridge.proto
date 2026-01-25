@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package rust_sse.bridge;
+
+// 事件消息定义
+message Event {
+    // 可选的事件 ID
+    optional string id = 1;
+    // 可选的事件类型
+    optional string event_type = 2;
+    // 事件载荷数据
+    bytes payload = 3;
+    // 可选的元数据
+    map<string, string> metadata = 4;
+}
+
+// 订阅请求
+message SubscribeRequest {
+    // 可选的过滤条件
+    repeated string event_types = 1;
+    // 可选的起始事件 ID（用于断点续传）
+    optional string last_event_id = 2;
+}
+
+// 发布请求
+message PublishRequest {
+    // 要发布的事件
+    Event event = 1;
+}
+
+// 发布响应
+message PublishResponse {
+    // 是否成功
+    bool success = 1;
+    // 错误消息（如果有）
+    optional string error = 2;
+}
+
+// 事件流服务
+service EventStream {
+    // 订阅事件流（服务端流式）
+    rpc Subscribe(SubscribeRequest) returns (stream Event);
+
+    // 发布事件（单一请求）
+    rpc Publish(PublishRequest) returns (PublishResponse);
+
+    // 双向流式事件交换
+    rpc Exchange(stream Event) returns (stream Event);
+}

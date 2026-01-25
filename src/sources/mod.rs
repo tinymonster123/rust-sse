@@ -16,4 +16,4 @@ pub use sse::SseSource;
 pub use websocket::WebSocketSource;
 
 #[cfg(feature = "grpc")]
-pub use grpc::GrpcSource;
+pub use grpc::{GrpcSource, GrpcSourceConfig, GrpcStreamSource, IntoBridgeEvent, stream_from_grpc};

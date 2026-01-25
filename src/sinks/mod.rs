@@ -14,4 +14,4 @@ pub use sse::SseSink;
 pub use websocket::WebSocketSink;
 
 #[cfg(feature = "grpc")]
-pub use grpc::GrpcSink;
+pub use grpc::{GrpcSink, GrpcSinkConfig, GrpcChannelSink, FromBridgeEvent, BytesMessage};
